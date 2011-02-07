@@ -71,29 +71,34 @@ public class Jmol extends JmolPanel {
                     Vector3f a = new Vector3f(x1-x0, y1-y0, z1-z0); // The "hand vector"
                     Vector3f b = new Vector3f(1.0f, 0, 0);          // The reference axis
                     
-                    // Get angle in radians between hand-vector and reference axis
-                    float angle = a.angle(b);
                     // Convert to degrees
-                    int degrees = (int)((360.0f * angle)/(2.0 * Math.PI)) ;
-                    int rounded = degrees/5;
-                    degrees = rounded * 5;
+                    int x_degrees = (int)((360.0f * x1 * 10)/(2.0 * Math.PI)) ;
+                    int rounded = x_degrees/5;
+                    x_degrees = rounded * 5;
 
-                    // Get axis to rotate around (right angles to A and B)
-                    Vector3f c = new Vector3f();
-                    c.cross(a, b);
+  /*                  // Convert to degrees
+                    int y_degrees = (int)((360.0f * y1 * 10)/(2.0 * Math.PI)) ;
+                    rounded = y_degrees/5;
+                    y_degrees = rounded * 5;*/
 
                     // Get zoom factor
                     float distance = a.length();
                     float average_z = (z0 + z1)/2.0f;
-                    int zoom = (int)(300.0f * distance * average_z); // zoom 100 is normal
+                    int zoom = (int)(600.0f * (y0-0.3) * average_z); // zoom 100 is normal
                     //rounded = zoom / 20;
                     //zoom = rounded * 20;
+                    
+                    // Get left-right translation
+                    float trans = (x0 - 0.4f)*300;
                     
                     
                     // Rotate the reference axis onto the hand vector and zoom in
                     jmolApp.viewer.evalString("reset; " + //draw arrow {0 0 0} {5 0 0}; " +  
                         "zoom " + zoom + "; " +
-                        "rotate AXISANGLE {"+c.x+" "+c.y+" "+c.z+" "+-degrees+"}");
+                        "rotate y " + x_degrees + "; " +
+//                        "rotate x " + y_degrees + "; " +
+                        "translate x " + trans + ";" +
+                        "set echo top left; echo " + y0);
                     
                 } finally {
                     lock.unlock();
