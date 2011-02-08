@@ -68,37 +68,31 @@ public class Jmol extends JmolPanel {
                     float y1 = (Float)args[5];
                     float z1 = (Float)args[6];
                     
-                    Vector3f a = new Vector3f(x1-x0, y1-y0, z1-z0); // The "hand vector"
-                    Vector3f b = new Vector3f(1.0f, 0, 0);          // The reference axis
-                    
-                    // Convert to degrees
-                    int x_degrees = (int)((360.0f * x1 * 10)/(2.0 * Math.PI)) ;
-                    int rounded = x_degrees/5;
+                    // Convert to degrees for rotation around y-axis
+                    int y_degrees = (int)(600 * (x1 - 0.5));
+                    double theta = y_degrees * (Math.PI / 180.0f);
+                    int rounded = y_degrees/5;
+                    y_degrees = rounded * 5;
+
+                    // Convert to degrees for rotation around rotated x-axis
+                    int x_degrees = (int)(600 * (y1-0.5));
+                    rounded = x_degrees/5;
                     x_degrees = rounded * 5;
 
-  /*                  // Convert to degrees
-                    int y_degrees = (int)((360.0f * y1 * 10)/(2.0 * Math.PI)) ;
-                    rounded = y_degrees/5;
-                    y_degrees = rounded * 5;*/
-
                     // Get zoom factor
-                    float distance = a.length();
                     float average_z = (z0 + z1)/2.0f;
-                    int zoom = (int)(600.0f * (y0-0.3) * average_z); // zoom 100 is normal
-                    //rounded = zoom / 20;
-                    //zoom = rounded * 20;
+                    int zoom = (int)(600.0f * (y0-0.4) * average_z); // zoom 100 is normal
                     
                     // Get left-right translation
                     float trans = (x0 - 0.4f)*300;
                     
-                    
                     // Rotate the reference axis onto the hand vector and zoom in
                     jmolApp.viewer.evalString("reset; " + //draw arrow {0 0 0} {5 0 0}; " +  
                         "zoom " + zoom + "; " +
-                        "rotate y " + x_degrees + "; " +
-//                        "rotate x " + y_degrees + "; " +
-                        "translate x " + trans + ";" +
-                        "set echo top left; echo " + y0);
+                        "rotate y " + y_degrees + "; " +
+                        "rotate axisangle { 1 0 0 " + x_degrees + "}; " +
+                        "translate x " + trans + ";");
+                        // "set echo top left; echo " + y_degrees + " " + x_degrees + " " + rot_axis.x);
                     
                 } finally {
                     lock.unlock();
