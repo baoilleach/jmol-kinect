@@ -28,6 +28,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JFrame;
+import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
 
 import org.jmol.util.Logger;
@@ -53,6 +54,13 @@ public class Jmol extends JmolPanel {
     OSCListener listener = new OSCListener() {
 
         final Lock lock = new ReentrantLock();
+        int state = 0;
+        float rotX = 0;
+        float srotX = 0;
+        float erotX = 0;
+        float rotY = 0;
+        float srotY = 0;
+        float erotY = 0;
 
         public void acceptMessage(java.util.Date time, OSCMessage message) {
             if (lock.tryLock()) {
@@ -67,21 +75,52 @@ public class Jmol extends JmolPanel {
                     float x1 = (Float)args[4];
                     float y1 = (Float)args[5];
                     float z1 = (Float)args[6];
+
+                    float angle = (float) Math.atan2((double)(y1-y0), (double)(z1-z0));
+                    int degrees = (int)((360.0f * angle)/(2.0 * Math.PI)) ;
+                    int rounded = degrees/5;
+                    degrees = rounded * 5;
+                    int x_degrees = degrees;
+
+                    angle = (float) Math.atan2((double)(x1-x0), (double)(z1-z0));
+                    degrees = (int)((360.0f * angle)/(2.0 * Math.PI)) ;
+                    rounded = degrees/5;
+                    degrees = rounded * 5;
+                    int y_degrees = degrees;                    
                     
-                    // Convert to degrees for rotation around y-axis
-                    int y_degrees = (int)(600 * (x1 - 0.5));
-                    double theta = y_degrees * (Math.PI / 180.0f);
-                    int rounded = y_degrees/5;
-                    y_degrees = rounded * 5;
-
-                    // Convert to degrees for rotation around rotated x-axis
-                    int x_degrees = (int)(600 * (y1-0.5));
-                    rounded = x_degrees/5;
-                    x_degrees = rounded * 5;
-
+                    // Change state
+                    int oldstate = state;
+                    if (Math.abs(x0 - x1) < 0.06) {
+                      if (state != 1) { // entering state
+                        srotX = x_degrees;
+                        state = 1;
+                      }
+                      rotX = erotX + (x_degrees - srotX);
+                    }
+                    else if (Math.abs(y0 - y1) < 0.06) {
+                      if (state != 2) {
+                        state = 2;
+                      }
+                      rotY = erotY + (y_degrees - srotY);
+                    }
+                    else {
+                      state = 0;
+                    }
+                    
+                    if (state != oldstate) { // Leaving state
+                      if (oldstate == 1)
+                        erotX = rotX;
+                      if (oldstate == 2)
+                        erotY = rotY;
+                    }
+                    
+                    
                     // Get zoom factor
+                    int zoom = 100;
+                    /*
                     float average_z = (z0 + z1)/2.0f;
                     int zoom = (int)(600.0f * (y0-0.4) * average_z); // zoom 100 is normal
+                    */
                     
                     // Get left-right translation
                     float trans = (x0 - 0.4f)*300;
@@ -89,10 +128,10 @@ public class Jmol extends JmolPanel {
                     // Rotate the reference axis onto the hand vector and zoom in
                     jmolApp.viewer.evalString("reset; " + //draw arrow {0 0 0} {5 0 0}; " +  
                         "zoom " + zoom + "; " +
-                        "rotate y " + y_degrees + "; " +
-                        "rotate axisangle { 1 0 0 " + x_degrees + "}; " +
-                        "translate x " + trans + ";");
-                        // "set echo top left; echo " + y_degrees + " " + x_degrees + " " + rot_axis.x);
+                        "rotate y " + rotY + "; " +
+                        "rotate axisangle { 1 0 0 " + -rotX + "}; " +
+                        "translate x " + trans + ";" +
+                         "set echo top left; echo " + state);
                     
                 } finally {
                     lock.unlock();
